@@ -5,7 +5,7 @@ import Account from "components/Account";
 import Chains from "components/Chains";
 import NFTBalance from "components/NFTBalance";
 import NFTTokenIds from "components/NFTTokenIds";
-import { Menu, Layout } from "antd";
+import { Menu, Layout, Dropdown, Button, Image } from "antd";
 import SearchCollections from "components/SearchCollections";
 import "antd/dist/antd.css";
 import NativeBalance from "components/NativeBalance";
@@ -13,6 +13,11 @@ import "./style.css";
 import "./style.less";
 import Text from "antd/lib/typography/Text";
 import NFTMarketTransactions from "components/NFTMarketTransactions";
+import { useTranslation } from "react-i18next";
+import { DownOutlined } from "@ant-design/icons";
+import KRFlag from "assets/kr-flag.png";
+import USFlag from "assets/us-flag.png";
+import i18n from "i18n";
 const { Header, Footer } = Layout;
 
 const styles = {
@@ -43,16 +48,68 @@ const styles = {
 		fontSize: "15px",
 		fontWeight: "600",
 	},
+	item: {
+		display: "flex",
+		alignItems: "center",
+		height: "42px",
+		fontWeight: "500",
+		fontFamily: "Roboto, sans-serif",
+		fontSize: "14px",
+		padding: "0 10px",
+	},
+	button: {
+		border: "2px solid rgb(231, 234, 243)",
+		borderRadius: "12px",
+	},
 };
+
+const languages = [
+	{
+		key: "en",
+		value: "English",
+		icon: <img src={USFlag} style={{ minWidth: "25px", minHeight: "25px" }} width="25" height="25" alt="" />,
+	},
+	{
+		key: "ko",
+		value: "한국어",
+		icon: <img src={KRFlag} style={{ minWidth: "25px", minHeight: "25px" }} width="25" height="25" alt="" />,
+	},
+];
+
 const App = ({ isServerInfo }) => {
 	const { isWeb3Enabled, enableWeb3, isAuthenticated, isWeb3EnableLoading } = useMoralis();
-
 	const [inputValue, setInputValue] = useState("explore");
+	const [selectedLang, setSelectedLang] = useState(languages[0]);
+	const { t } = useTranslation(["navbar"]);
+
+	useEffect(() => {
+		const savedLanguage = localStorage.getItem("i18n");
+		if (savedLanguage) handleLanguageItemClick({ key: savedLanguage });
+	}, []);
+
+	useEffect(() => {
+		localStorage.setItem("i18n", selectedLang.key);
+		i18n.changeLanguage(selectedLang.key);
+	}, [selectedLang]);
 
 	useEffect(() => {
 		if (isAuthenticated && !isWeb3Enabled && !isWeb3EnableLoading) enableWeb3();
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [isAuthenticated, isWeb3Enabled]);
+
+	const handleLanguageItemClick = (e) => {
+		setSelectedLang(languages.filter((v) => v.key === e.key)[0]);
+	};
+
+	const languagesComponent = (
+		<Menu onClick={handleLanguageItemClick}>
+			{languages.map((item) => (
+				<Menu.Item key={item.key} icon={item.icon} style={styles.item}>
+					<span style={{ marginLeft: "5px" }}>{item.value}</span>
+				</Menu.Item>
+			))}
+		</Menu>
+	);
 
 	return (
 		<Layout style={{ height: "100vh", overflow: "auto" }}>
@@ -72,16 +129,26 @@ const App = ({ isServerInfo }) => {
 						defaultSelectedKeys={["nftMarket"]}
 					>
 						<Menu.Item key="nftMarket" onClick={() => setInputValue("explore")}>
-							<NavLink to="/NFTMarketPlace">🛒 Explore Market</NavLink>
+							<NavLink to="/NFTMarketPlace">{t("navbar:exploreMarket")}</NavLink>
 						</Menu.Item>
 						<Menu.Item key="nft">
-							<NavLink to="/nftBalance">🖼 Your Collection</NavLink>
+							<NavLink to="/nftBalance">{t("navbar:yourCollection")}</NavLink>
 						</Menu.Item>
 						<Menu.Item key="transactions">
-							<NavLink to="/Transactions">📑 Your Transactions</NavLink>
+							<NavLink to="/Transactions">{t("navbar:transactions")}</NavLink>
 						</Menu.Item>
 					</Menu>
 					<div style={styles.headerRight}>
+						{selectedLang && (
+							<div>
+								<Dropdown overlay={languagesComponent} trigger={["click"]}>
+									<Button key={selectedLang.key} style={{ ...styles.button, ...styles.item }}>
+										{selectedLang.icon}
+										<DownOutlined style={{ marginLeft: "5px" }} />
+									</Button>
+								</Dropdown>
+							</div>
+						)}
 						<Chains />
 						<NativeBalance />
 						<Account />
